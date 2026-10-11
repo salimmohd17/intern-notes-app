@@ -1,0 +1,21 @@
+{
+  "name": "codenova-fullstack-internship",
+  "version": "1.0.0",
+  "description": "CodeNova Remote Internship Program - Full Stack Development Track (Batch 01)",
+  "scripts": {
+    "seed:task1": "node task1-notes-app/backend/database/seed.js",
+    "backend:task1": "node task1-notes-app/backend/src/server.js",
+    "frontend:task1": "npm --prefix task1-notes-app/frontend run dev",
+    "build:task1": "npm --prefix task1-notes-app/frontend run build"
+  },
+  "keywords": [
+    "codenova",
+    "fullstack",
+    "react",
+    "nodejs",
+    "express",
+    "sqlite"
+  ],
+  "author": "CodeNova Intern",
+  "license": "MIT"
+}
