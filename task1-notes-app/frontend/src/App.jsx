@@ -281,7 +281,18 @@ export default function App() {
           <div className="offline-alert-banner">
             <AlertTriangle size={18} className="banner-icon" />
             <div className="banner-content">
-              <strong>Connecting to Server:</strong> Unable to reach the API server. If hosted on a free cloud service (such as Render), it may take 30–50 seconds to wake up from idle. Reconnecting automatically...
+              {typeof window !== 'undefined' &&
+              window.location.hostname !== 'localhost' &&
+              window.location.hostname !== '127.0.0.1' &&
+              notesApi.isLocalUrl ? (
+                <>
+                  <strong>Netlify Configuration Needed:</strong> This site is live on Netlify, but <code>VITE_API_URL</code> is still defaulting to <code>{notesApi.baseUrl}</code>. You need to add the <code>VITE_API_URL</code> environment variable in Netlify Site Configuration (pointing to your live Render backend URL) and trigger a redeploy.
+                </>
+              ) : (
+                <>
+                  <strong>Connecting to Backend:</strong> Attempting to reach <code>{notesApi.baseUrl}</code>. If your backend is hosted on a free cloud service (such as Render), it may take 30–50 seconds to wake up from idle. Reconnecting automatically...
+                </>
+              )}
             </div>
             <button type="button" className="banner-retry-btn" onClick={handleRefresh}>
               Retry Now

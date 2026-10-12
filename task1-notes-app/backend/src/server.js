@@ -21,6 +21,17 @@ app.use(morgan('dev'));
 // API Routes
 app.use('/api/notes', notesRoutes);
 
+// Root welcome endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    service: 'MY LIFE NOTES Backend API',
+    health: '/api/health',
+    notes: '/api/notes',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({

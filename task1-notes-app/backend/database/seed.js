@@ -1,43 +1,4 @@
 import db from '../src/db.js';
-
-const initialNotes = [
-  {
-    title: 'CodeNova Full Stack Internship Roadmap',
-    content: 'Review Task 1 (Notes Application) and Task 2 (Expense Tracker). Ensure database persistence, responsive UI, search filtering, and comprehensive README documentation before the submission deadline.',
-    category: 'Work',
-    is_pinned: 1,
-    color: '#fef3c7' // amber
-  },
-  {
-    title: 'Express & SQLite Best Practices',
-    content: '1. Utilize prepared statements to prevent SQL injection.\n2. Validate incoming payloads on both client and server layers.\n3. Centralize error handling middleware.\n4. Design intuitive RESTful response contracts.',
-    category: 'Study',
-    is_pinned: 1,
-    color: '#dbeafe' // blue
-  },
-  {
-    title: 'Grocery & Weekend Shopping List',
-    content: '- Almond milk & Greek yogurt\n- Whole grain bread\n- Organic green tea\n- Fresh avocados & spinach\n- Dark chocolate (85%)',
-    category: 'Personal',
-    is_pinned: 0,
-    color: '#dcfce7' // green
-  },
-  {
-    title: 'Project Architecture Ideas',
-    content: 'Plan responsive card grid and list views for notes. Implement instant search filter, color tagging, pin to top, and toast notifications for network alerts.',
-    category: 'Ideas',
-    is_pinned: 0,
-    color: '#f3e8ff' // purple
-  },
-  {
-    title: 'Urgent: Submit GitHub Repo Link',
-    content: 'Make sure git commits are clear and professional. Double check that .gitignore excludes node_modules and local temporary SQLite files.',
-    category: 'Urgent',
-    is_pinned: 0,
-    color: '#fee2e2' // rose
-  }
-];
-
 try {
   // Clear existing notes
   db.exec('DELETE FROM notes;');

@@ -1,4 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+function getNormalizedApiUrl(url) {
+  let cleaned = (url || '').trim().replace(/\/+$/, '');
+  if (!cleaned) return 'http://localhost:5000/api';
+  if (!cleaned.endsWith('/api')) {
+    cleaned = `${cleaned}/api`;
+  }
+  return cleaned;
+}
+
+const API_BASE_URL = getNormalizedApiUrl(rawApiUrl);
 
 /**
  * Helper to handle fetch responses & network errors uniformly
@@ -28,13 +39,15 @@ async function request(endpoint, options = {}) {
     return data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Network error: Unable to reach backend server. Please verify port 5000 is active.');
+      throw new Error(`Network error: Unable to reach backend server at ${API_BASE_URL}.`);
     }
     throw error;
   }
 }
 
 export const notesApi = {
+  baseUrl: API_BASE_URL,
+  isLocalUrl: API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1'),
   // Fetch all notes with optional search & category
   getAllNotes: (params = {}) => {
     const query = new URLSearchParams();
