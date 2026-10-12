@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Pin, Folder, Download, RotateCcw } from 'lucide-react';
+import { Layers, Pin, Folder, RotateCcw } from 'lucide-react';
 
 export default function StatsBar({
   totalNotes,
@@ -7,18 +7,7 @@ export default function StatsBar({
   categoryCount,
   hasActiveFilters,
   onResetFilters,
-  notes,
 }) {
-  const handleExportJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(notes, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `notes-export-${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  };
-
   return (
     <div className="stats-bar">
       <div className="stats-group">
@@ -41,8 +30,8 @@ export default function StatsBar({
         </div>
       </div>
 
-      <div className="stats-actions">
-        {hasActiveFilters && (
+      {hasActiveFilters && (
+        <div className="stats-actions">
           <button
             type="button"
             className="btn-text-action"
@@ -51,16 +40,8 @@ export default function StatsBar({
           >
             <RotateCcw size={13} className="mr-1" /> Clear Filters
           </button>
-        )}
-        <button
-          type="button"
-          className="btn-text-action"
-          onClick={handleExportJson}
-          title="Export notes as JSON file"
-        >
-          <Download size={13} className="mr-1" /> Export JSON
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

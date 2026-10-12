@@ -1,6 +1,6 @@
-# 📝 Notes Application (Task 1) — CodeNova Internship
+# 📝 MY LIFE NOTES — Notes Application (Task 1)
 
-> **CodeNova Full Stack Development Internship • Batch 01**  
+> **Full Stack Development**  
 > **Mode:** Remote / Online | **Duration:** 4 Weeks (Self-Paced) | **Deadline:** 06 November 2026
 
 An end-to-end, full-stack Notes Application featuring client-server CRUD operations, instant search filtering, responsive card and list views, category organization, note pinning, color theming, and SQLite database persistence.
@@ -35,7 +35,6 @@ An end-to-end, full-stack Notes Application featuring client-server CRUD operati
   - Press `c` to open new note modal (when not typing).
   - Press `Ctrl + Enter` to quickly save in modal.
   - Press `Escape` to close modals.
-- **Data Export**: One-click export of notes to JSON file.
 
 ---
 
@@ -63,11 +62,12 @@ task1-notes-app/
 │   │   ├── components/
 │   │   │   ├── CategoryFilter.jsx  # Category pills & count badges
 │   │   │   ├── EmptyState.jsx      # Clean states for empty/search
+│   │   │   ├── Footer.jsx          # App footer with copyright & BMS Techs button
 │   │   │   ├── Navbar.jsx          # Header, server status & view toggle
 │   │   │   ├── NoteCard.jsx        # Responsive note card (Grid & List)
 │   │   │   ├── NoteModal.jsx       # Create/Edit modal with validation
 │   │   │   ├── SearchBar.jsx       # Instant search with clear button
-│   │   │   ├── StatsBar.jsx        # Metrics bar & JSON export
+│   │   │   ├── StatsBar.jsx        # Metrics and status bar
 │   │   │   └── Toast.jsx           # Animated toast notifications
 │   │   ├── services/
 │   │   │   └── api.js              # Centralized API client & network handler

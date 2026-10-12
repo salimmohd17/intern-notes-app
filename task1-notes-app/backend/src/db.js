@@ -21,4 +21,46 @@ if (fs.existsSync(schemaPath)) {
   db.exec(schema);
 }
 
+// Auto-seed default notes if table is empty (helpful for fresh cloud deployments)
+try {
+  const countRow = db.prepare('SELECT COUNT(*) as count FROM notes').get();
+  if (countRow && countRow.count === 0) {
+    const defaultNotes = [
+      {
+        title: 'Welcome to MY LIFE NOTES',
+        content: 'Organize your thoughts, daily tasks, study materials, and personal reflections in one clean workspace. Easily create, edit, pin, and categorize notes.',
+        category: 'Personal',
+        is_pinned: 1,
+        color: '#fef3c7'
+      },
+      {
+        title: 'Keyboard Shortcuts & Quick Actions',
+        content: 'Press "/" or "Ctrl+K" to instantly jump to search.\nPress "c" to quickly compose a new note.\nPress "Ctrl+Enter" to save immediately in the editor.',
+        category: 'Study',
+        is_pinned: 1,
+        color: '#dbeafe'
+      },
+      {
+        title: 'Weekly Goals & Milestones',
+        content: '- Review project roadmap\n- Keep notes organized by categories\n- Update portfolio on Netlify',
+        category: 'Work',
+        is_pinned: 0,
+        color: '#dcfce7'
+      }
+    ];
+
+    db.exec('BEGIN TRANSACTION;');
+    const insert = db.prepare(`
+      INSERT INTO notes (title, content, category, is_pinned, color, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `);
+    for (const note of defaultNotes) {
+      insert.run(note.title, note.content, note.category, note.is_pinned, note.color);
+    }
+    db.exec('COMMIT;');
+  }
+} catch (err) {
+  console.warn('Note count check failed or skipped:', err.message);
+}
+
 export default db;

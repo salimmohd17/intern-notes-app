@@ -6,6 +6,7 @@ import StatsBar from './components/StatsBar';
 import NoteCard from './components/NoteCard';
 import NoteModal from './components/NoteModal';
 import EmptyState from './components/EmptyState';
+import Footer from './components/Footer';
 import ToastContainer from './components/Toast';
 import { notesApi } from './services/api';
 import { Pin, FileText, AlertTriangle, Trash2 } from 'lucide-react';
@@ -93,18 +94,32 @@ export default function App() {
     loadCategories();
   }, []);
 
-  // Periodic health check
+  // Periodic health check with fast auto-recovery if server was sleeping/offline
   useEffect(() => {
-    const interval = setInterval(async () => {
+    let isCancelled = false;
+    const checkServer = async () => {
       try {
         await notesApi.checkHealth();
-        setServerOnline(true);
+        if (!isCancelled) {
+          if (!serverOnline) {
+            setServerOnline(true);
+            loadNotes();
+            loadCategories();
+          }
+        }
       } catch {
-        setServerOnline(false);
+        if (!isCancelled) {
+          setServerOnline(false);
+        }
       }
-    }, 15000);
-    return () => clearInterval(interval);
-  }, []);
+    };
+
+    const interval = setInterval(checkServer, serverOnline ? 20000 : 4000);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [serverOnline, loadNotes, loadCategories]);
 
   // Keyboard shortcut: Press 'c' to create note when not typing
   useEffect(() => {
@@ -261,15 +276,15 @@ export default function App() {
       />
 
       <main className="main-content">
-        {/* Offline Warning Banner */}
+        {/* Offline / Server Waking Up Banner */}
         {!serverOnline && (
           <div className="offline-alert-banner">
             <AlertTriangle size={18} className="banner-icon" />
             <div className="banner-content">
-              <strong>Backend Disconnected:</strong> Could not reach the Node.js Express server on port 5000. Changes may fail to persist until the server is running.
+              <strong>Connecting to Server:</strong> Unable to reach the API server. If hosted on a free cloud service (such as Render), it may take 30–50 seconds to wake up from idle. Reconnecting automatically...
             </div>
             <button type="button" className="banner-retry-btn" onClick={handleRefresh}>
-              Retry Connection
+              Retry Now
             </button>
           </div>
         )}
@@ -296,7 +311,6 @@ export default function App() {
             categoryCount={allUniqueCategories.length}
             hasActiveFilters={hasActiveFilters}
             onResetFilters={handleResetFilters}
-            notes={notes}
           />
         </section>
 
@@ -368,6 +382,9 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Floating Add Note Action for Mobile */}
       <button

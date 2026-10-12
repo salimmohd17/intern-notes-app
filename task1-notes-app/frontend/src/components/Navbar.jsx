@@ -19,10 +19,9 @@ export default function Navbar({
           </div>
           <div>
             <div className="brand-title-row">
-              <h1 className="brand-title">CodeNova Notes</h1>
-              <span className="badge-batch">Batch 01</span>
+              <h1 className="brand-title">MY LIFE NOTES</h1>
             </div>
-            <p className="brand-subtitle">Task 1 • Full Stack Client & Server CRUD</p>
+            <p className="brand-subtitle">Capture thoughts, ideas & daily memories</p>
           </div>
         </div>
 
@@ -30,11 +29,11 @@ export default function Navbar({
         <div className="navbar-controls">
           <div
             className={`server-status-pill ${serverOnline ? 'status-online' : 'status-offline'}`}
-            title={serverOnline ? 'Backend API connected (Port 5000)' : 'Backend API disconnected'}
+            title={serverOnline ? 'Backend API connected' : 'Backend API connecting or offline'}
           >
             <span className="status-dot"></span>
             <span className="status-label">
-              {serverOnline ? 'Backend Online' : 'Backend Disconnected'}
+              {serverOnline ? 'Backend Online' : 'Connecting / Offline'}
             </span>
           </div>
 

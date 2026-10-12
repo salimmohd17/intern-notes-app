@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: my-life-notes-backend
+    env: node
+    plan: free
+    rootDir: task1-notes-app/backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.11.0
+      - key: PORT
+        value: 5000
