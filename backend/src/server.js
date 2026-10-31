@@ -3,11 +3,13 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import notesRoutes from './routes/notes.js';
+import { runMigrations } from '../database/migrate.js';
+import { checkDatabaseConnection, pool } from './db.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors({
@@ -34,11 +36,24 @@ app.get('/', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    service: 'Notes App Backend API',
-    timestamp: new Date().toISOString()
-  });
+  checkDatabaseConnection()
+    .then(() => {
+      res.json({
+        status: 'OK',
+        database: 'connected',
+        service: 'Notes App Backend API',
+        timestamp: new Date().toISOString()
+      });
+    })
+    .catch((error) => {
+      console.error('Database health check failed:', error);
+      res.status(503).json({
+        status: 'ERROR',
+        database: 'disconnected',
+        service: 'Notes App Backend API',
+        timestamp: new Date().toISOString()
+      });
+    });
 });
 
 // 404 handler
@@ -59,7 +74,18 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(` Notes API Server is running on http://localhost:${PORT}`);
-  console.log(` Health check available at http://localhost:${PORT}/api/health`);
-});
+async function startServer() {
+  try {
+    await runMigrations();
+    app.listen(PORT, () => {
+      console.log(`Notes API Server is running on port ${PORT}`);
+      console.log(`Health check available at /api/health`);
+    });
+  } catch (error) {
+    console.error('Backend startup failed:', error);
+    await pool.end();
+    process.exit(1);
+  }
+}
+
+startServer();

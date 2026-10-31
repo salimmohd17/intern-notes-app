@@ -1,33 +1,33 @@
-import db from '../db.js';
+import { query } from '../db.js';
 
-// Get all notes with search & filtering
-export const getNotes = (req, res) => {
+function parseNoteId(value) {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+export const getNotes = async (req, res) => {
   try {
     const { search, category, pinned } = req.query;
-    let query = 'SELECT * FROM notes WHERE 1=1';
+    let queryText = 'SELECT * FROM notes WHERE 1=1';
     const params = [];
 
     if (search && search.trim() !== '') {
-      query += ' AND (title LIKE ? OR content LIKE ?)';
-      const term = `%${search.trim()}%`;
-      params.push(term, term);
+      params.push(`%${search.trim()}%`);
+      queryText += ` AND (title ILIKE $${params.length} OR content ILIKE $${params.length})`;
     }
 
     if (category && category !== 'All') {
-      query += ' AND category = ?';
       params.push(category);
+      queryText += ` AND category = $${params.length}`;
     }
 
     if (pinned !== undefined && pinned !== '') {
-      query += ' AND is_pinned = ?';
-      params.push(pinned === 'true' || pinned === '1' ? 1 : 0);
+      params.push(pinned === 'true' || pinned === '1');
+      queryText += ` AND is_pinned = $${params.length}`;
     }
 
-    query += ' ORDER BY is_pinned DESC, updated_at DESC, id DESC';
-
-    const stmt = db.prepare(query);
-    const notes = stmt.all(...params);
-
+    queryText += ' ORDER BY is_pinned DESC, updated_at DESC, id DESC';
+    const { rows: notes } = await query(queryText, params);
     return res.json({ success: true, count: notes.length, data: notes });
   } catch (error) {
     console.error('Error fetching notes:', error);
@@ -35,13 +35,14 @@ export const getNotes = (req, res) => {
   }
 };
 
-// Get single note by ID
-export const getNoteById = (req, res) => {
+export const getNoteById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const stmt = db.prepare('SELECT * FROM notes WHERE id = ?');
-    const note = stmt.get(id);
+    const id = parseNoteId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Invalid note id' });
+    }
 
+    const { rows: [note] } = await query('SELECT * FROM notes WHERE id = $1', [id]);
     if (!note) {
       return res.status(404).json({ success: false, error: `Note with id ${id} not found` });
     }
@@ -53,8 +54,7 @@ export const getNoteById = (req, res) => {
   }
 };
 
-// Create a new note
-export const createNote = (req, res) => {
+export const createNote = async (req, res) => {
   try {
     const { title, content, category, is_pinned, color } = req.body;
 
@@ -67,16 +67,12 @@ export const createNote = (req, res) => {
 
     const noteCategory = (category && category.trim()) || 'General';
     const noteColor = color || '#ffffff';
-    const notePinned = is_pinned ? 1 : 0;
-
-    const stmt = db.prepare(`
+    const notePinned = Boolean(is_pinned);
+    const { rows: [newNote] } = await query(`
       INSERT INTO notes (title, content, category, is_pinned, color, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `);
-
-    const result = stmt.run(title.trim(), content.trim(), noteCategory, notePinned, noteColor);
-
-    const newNote = db.prepare('SELECT * FROM notes WHERE id = ?').get(result.lastInsertRowid);
+      VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *
+    `, [title.trim(), content.trim(), noteCategory, notePinned, noteColor]);
 
     return res.status(201).json({
       success: true,
@@ -89,17 +85,18 @@ export const createNote = (req, res) => {
   }
 };
 
-// Update an existing note
-export const updateNote = (req, res) => {
+export const updateNote = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseNoteId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Invalid note id' });
+    }
     const { title, content, category, is_pinned, color } = req.body;
+    const { rows: [existingNote] } = await query('SELECT * FROM notes WHERE id = $1', [id]);
 
-    const existingNote = db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
     if (!existingNote) {
       return res.status(404).json({ success: false, error: `Note with id ${id} not found` });
     }
-
     if (title !== undefined && !title.trim()) {
       return res.status(400).json({ success: false, error: 'Title cannot be empty.' });
     }
@@ -110,18 +107,14 @@ export const updateNote = (req, res) => {
     const updatedTitle = title !== undefined ? title.trim() : existingNote.title;
     const updatedContent = content !== undefined ? content.trim() : existingNote.content;
     const updatedCategory = category !== undefined ? category.trim() : existingNote.category;
-    const updatedPinned = is_pinned !== undefined ? (is_pinned ? 1 : 0) : existingNote.is_pinned;
+    const updatedPinned = is_pinned !== undefined ? Boolean(is_pinned) : existingNote.is_pinned;
     const updatedColor = color !== undefined ? color : existingNote.color;
-
-    const stmt = db.prepare(`
+    const { rows: [updatedNote] } = await query(`
       UPDATE notes
-      SET title = ?, content = ?, category = ?, is_pinned = ?, color = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-
-    stmt.run(updatedTitle, updatedContent, updatedCategory, updatedPinned, updatedColor, id);
-
-    const updatedNote = db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
+      SET title = $1, content = $2, category = $3, is_pinned = $4, color = $5, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $6
+      RETURNING *
+    `, [updatedTitle, updatedContent, updatedCategory, updatedPinned, updatedColor, id]);
 
     return res.json({
       success: true,
@@ -134,22 +127,23 @@ export const updateNote = (req, res) => {
   }
 };
 
-// Delete a note
-export const deleteNote = (req, res) => {
+export const deleteNote = async (req, res) => {
   try {
-    const { id } = req.params;
-    const existingNote = db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
+    const id = parseNoteId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Invalid note id' });
+    }
+    const { rows: [existingNote] } = await query('SELECT id FROM notes WHERE id = $1', [id]);
 
     if (!existingNote) {
       return res.status(404).json({ success: false, error: `Note with id ${id} not found` });
     }
-
-    db.prepare('DELETE FROM notes WHERE id = ?').run(id);
+    await query('DELETE FROM notes WHERE id = $1', [id]);
 
     return res.json({
       success: true,
       message: 'Note deleted successfully',
-      data: { id: Number(id) }
+      data: { id }
     });
   } catch (error) {
     console.error('Error deleting note:', error);
@@ -157,20 +151,26 @@ export const deleteNote = (req, res) => {
   }
 };
 
-// Toggle pin status
-export const togglePin = (req, res) => {
+export const togglePin = async (req, res) => {
   try {
-    const { id } = req.params;
-    const existingNote = db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
+    const id = parseNoteId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Invalid note id' });
+    }
+    const { rows: [existingNote] } = await query('SELECT * FROM notes WHERE id = $1', [id]);
 
     if (!existingNote) {
       return res.status(404).json({ success: false, error: `Note with id ${id} not found` });
     }
 
-    const newPinned = existingNote.is_pinned ? 0 : 1;
-    db.prepare('UPDATE notes SET is_pinned = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newPinned, id);
+    const newPinned = !existingNote.is_pinned;
+    const { rows: [updatedNote] } = await query(`
+      UPDATE notes
+      SET is_pinned = $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+      RETURNING *
+    `, [newPinned, id]);
 
-    const updatedNote = db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
     return res.json({
       success: true,
       message: newPinned ? 'Note pinned' : 'Note unpinned',
@@ -182,11 +182,15 @@ export const togglePin = (req, res) => {
   }
 };
 
-// Get categories list
-export const getCategories = (req, res) => {
+export const getCategories = async (req, res) => {
   try {
-    const rows = db.prepare('SELECT DISTINCT category FROM notes WHERE category IS NOT NULL AND category != "" ORDER BY category ASC').all();
-    const categories = rows.map((r) => r.category);
+    const { rows } = await query(`
+      SELECT DISTINCT category
+      FROM notes
+      WHERE category IS NOT NULL AND category <> ''
+      ORDER BY category ASC
+    `);
+    const categories = rows.map((row) => row.category);
     return res.json({ success: true, data: categories });
   } catch (error) {
     console.error('Error fetching categories:', error);

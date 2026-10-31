@@ -9,7 +9,3 @@ yarn-debug.log*
 Thumbs.db
 .vscode/
 .idea/
-database/notes.db
-database/*.db
-database/*.db-wal
-database/*.db-shm

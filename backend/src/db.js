@@ -1,27 +1,35 @@
-import { DatabaseSync } from 'node:sqlite';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import pg from 'pg';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
-const dbDir = path.resolve(__dirname, '../database');
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+const { Pool } = pg;
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required. Configure it in the backend environment.');
 }
 
-const dbPath = process.env.NOTES_DB_PATH
-  ? path.resolve(process.env.NOTES_DB_PATH)
-  : path.join(dbDir, 'notes.db');
-fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-const db = new DatabaseSync(dbPath);
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
 
-// Initialize schema
-const schemaPath = path.join(dbDir, 'schema.sql');
-if (fs.existsSync(schemaPath)) {
-  const schema = fs.readFileSync(schemaPath, 'utf8');
-  db.exec(schema);
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized
+  },
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000
+});
+
+pool.on('error', (error) => {
+  console.error('Unexpected PostgreSQL pool error:', error);
+});
+
+export function query(text, params = []) {
+  return pool.query(text, params);
 }
 
-export default db;
+export async function checkDatabaseConnection() {
+  const { rows } = await pool.query('SELECT NOW() AS current_time');
+  return rows[0];
+}

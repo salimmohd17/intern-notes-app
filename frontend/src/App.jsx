@@ -172,7 +172,7 @@ export default function App() {
         setNotes((prev) => [res.data, ...prev]);
         setModalState({ isOpen: false, mode: 'create', note: null });
         loadCategories();
-        addToast('success', 'New note was saved to SQLite database.', 'Note Created');
+        addToast('success', 'New note was saved.', 'Note Created');
       }
     } catch (err) {
       addToast('error', err.message || 'Failed to create note.', 'Error');
@@ -236,7 +236,7 @@ export default function App() {
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
       setDeleteConfirm({ isOpen: false, noteId: null, noteTitle: '' });
       loadCategories();
-      addToast('success', 'Note removed from SQLite database.', 'Note Deleted');
+      addToast('success', 'Note removed.', 'Note Deleted');
     } catch (err) {
       addToast('error', err.message || 'Failed to delete note.', 'Error');
     }
@@ -329,7 +329,7 @@ export default function App() {
         {loading ? (
           <div className="loading-state">
             <div className="loading-spinner"></div>
-            <p>Loading notes from SQLite database...</p>
+            <p>Loading notes...</p>
           </div>
         ) : notes.length === 0 ? (
           <EmptyState
@@ -426,7 +426,7 @@ export default function App() {
             </div>
             <h3 className="confirm-title">Delete Note?</h3>
             <p className="confirm-desc">
-              Are you sure you want to delete <strong>"{deleteConfirm.noteTitle}"</strong>? This will permanently remove it from the SQLite database.
+              Are you sure you want to delete <strong>"{deleteConfirm.noteTitle}"</strong>? This will permanently remove it.
             </p>
             <div className="confirm-btn-row">
               <button
